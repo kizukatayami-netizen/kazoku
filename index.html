@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>わが家ノート</title>
+<meta name="theme-color" content="#F4A261">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="わが家ノート">
+<style>
+  :root {
+    --bg: #FFF8EC;
+    --card: #FFFFFF;
+    --main: #E76F51;
+    --main-soft: #F4A261;
+    --text: #3D2C29;
+    --sub: #8A7468;
+    --line: #F0E2CF;
+    --food: #E9F5E1;
+    --food-text: #3E7B27;
+    --daily: #E3F0FA;
+    --daily-text: #2A6496;
+    --other: #F6E9F7;
+    --other-text: #8A3F8F;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+    font-size: 18px;
+    line-height: 1.5;
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+  button, input, select { font: inherit; }
+  .hidden { display: none !important; }
+
+  /* ---------- 合言葉画面 ---------- */
+  #login {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; text-align: center;
+  }
+  #login img { width: 110px; height: 110px; border-radius: 28px; margin-bottom: 16px; }
+  #login h1 { font-size: 28px; margin: 0 0 8px; }
+  #login p { color: var(--sub); margin: 0 0 24px; }
+  #login input {
+    width: 100%; max-width: 360px; padding: 16px; font-size: 20px;
+    border: 3px solid var(--line); border-radius: 16px; background: #fff; text-align: center;
+  }
+  #login input:focus { outline: none; border-color: var(--main-soft); }
+  .big-btn {
+    width: 100%; max-width: 360px; margin-top: 16px; padding: 16px;
+    font-size: 20px; font-weight: bold; color: #fff; background: var(--main);
+    border: none; border-radius: 16px; box-shadow: 0 4px 0 #C4553A;
+  }
+  .big-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #C4553A; }
+  #loginError { color: #C0392B; font-weight: bold; min-height: 28px; margin-top: 12px; }
+
+  /* ---------- ヘッダー ---------- */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--main-soft); color: #fff;
+    padding: calc(14px + env(safe-area-inset-top)) 16px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+  header h1 { font-size: 22px; margin: 0; }
+  #logoutBtn {
+    background: rgba(255,255,255,.25); color: #fff; border: none;
+    border-radius: 12px; padding: 8px 12px; font-size: 14px;
+  }
+  main { padding: 16px; max-width: 640px; margin: 0 auto; }
+
+  .card {
+    background: var(--card); border-radius: 20px; padding: 16px;
+    box-shadow: 0 2px 10px rgba(120, 80, 40, .08); margin-bottom: 16px;
+  }
+
+  /* ---------- 入力欄 ---------- */
+  #itemName {
+    width: 100%; padding: 14px 16px; font-size: 20px;
+    border: 3px solid var(--line); border-radius: 14px;
+  }
+  #itemName:focus { outline: none; border-color: var(--main-soft); }
+  .cats { display: flex; gap: 8px; margin-top: 12px; }
+  .cat-btn {
+    flex: 1; padding: 12px 4px; border-radius: 14px; border: 3px solid transparent;
+    font-size: 17px; font-weight: bold;
+  }
+  .cat-btn[data-cat="食品"] { background: var(--food); color: var(--food-text); }
+  .cat-btn[data-cat="日用品"] { background: var(--daily); color: var(--daily-text); }
+  .cat-btn[data-cat="その他"] { background: var(--other); color: var(--other-text); }
+  .cat-btn.selected { border-color: currentColor; }
+  #addBtn { max-width: none; }
+
+  /* ---------- リスト ---------- */
+  .section-title {
+    font-size: 16px; font-weight: bold; color: var(--sub);
+    margin: 20px 4px 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .item {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--card); border-radius: 16px; padding: 14px 16px; margin-bottom: 8px;
+    box-shadow: 0 1px 6px rgba(120, 80, 40, .07);
+    user-select: none; cursor: pointer;
+  }
+  .check {
+    width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%;
+    border: 3px solid var(--main-soft); display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 20px; font-weight: bold;
+  }
+  .item.done .check { background: var(--main-soft); }
+  .item .name { font-size: 20px; word-break: break-all; }
+  .item.done .name { text-decoration: line-through; color: #B9A89C; }
+  .empty { text-align: center; color: var(--sub); padding: 32px 0; }
+  #clearBtn {
+    width: 100%; padding: 14px; margin-top: 12px; font-size: 17px; font-weight: bold;
+    background: #fff; color: var(--main); border: 3px dashed var(--main-soft); border-radius: 16px;
+  }
+
+  /* ---------- 下のタブ ---------- */
+  nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+    display: flex; background: #fff; border-top: 2px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav button {
+    flex: 1; background: none; border: none; padding: 10px 0 12px;
+    font-size: 14px; color: var(--sub); font-weight: bold;
+  }
+  nav button .ico { display: block; font-size: 26px; line-height: 1.2; }
+  nav button.active { color: var(--main); }
+
+  /* ---------- お知らせ ---------- */
+  #setupNote {
+    background: #FFF1D6; border: 2px solid #F6C77A; border-radius: 16px;
+    padding: 14px 16px; margin-bottom: 16px; font-size: 16px;
+  }
+  #setupNote code {
+    display: inline-block; font-size: 22px; font-weight: bold; letter-spacing: 2px;
+    background: #fff; padding: 4px 10px; border-radius: 8px; margin: 6px 0; user-select: all;
+  }
+  #toast {
+    position: fixed; left: 16px; right: 16px; bottom: calc(100px + env(safe-area-inset-bottom));
+    background: #3D2C29; color: #fff; padding: 14px 16px; border-radius: 14px;
+    font-size: 15px; z-index: 20; word-break: break-all; user-select: text;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 合言葉画面 ===== -->
+<section id="login" class="hidden">
+  <img src="icon-192.png" alt="">
+  <h1>わが家ノート</h1>
+  <p>家族の合言葉を入れてください</p>
+  <input id="passInput" type="password" placeholder="合言葉" autocomplete="current-password">
+  <button id="loginBtn" class="big-btn">ひらく</button>
+  <div id="loginError"></div>
+</section>
+
+<!-- ===== アプリ本体 ===== -->
+<div id="app" class="hidden">
+  <header>
+    <h1 id="pageTitle">🛒 買い物リスト</h1>
+    <button id="logoutBtn">合言葉を入れ直す</button>
+  </header>
+
+  <main>
+    <div id="setupNote" class="hidden">
+      <b>はじめての設定（管理人さん向け）</b><br>
+      合言葉チェック番号：<br><code id="checkCode"></code><br>
+      この番号を案内どおりに登録すると、合言葉が違うときに入れなくなります。
+    </div>
+
+    <!-- 買い物タブ -->
+    <section id="tab-shop">
+      <div class="card">
+        <input id="itemName" type="text" placeholder="例：牛乳" enterkeyhint="done">
+        <div class="cats">
+          <button class="cat-btn selected" data-cat="食品">🥕 食品</button>
+          <button class="cat-btn" data-cat="日用品">🧻 日用品</button>
+          <button class="cat-btn" data-cat="その他">📦 その他</button>
+        </div>
+        <button id="addBtn" class="big-btn">＋ 追加する</button>
+      </div>
+
+      <div id="list"><div class="empty">読み込み中…</div></div>
+      <button id="clearBtn" class="hidden"></button>
+    </section>
+
+    <!-- 予定タブ（次のステップで作ります） -->
+    <section id="tab-board" class="hidden">
+      <div class="card empty">📅 予定・連絡ボードは<br>次のステップで追加します</div>
+    </section>
+  </main>
+
+  <nav>
+    <button class="active" data-tab="shop"><span class="ico">🛒</span>買い物</button>
+    <button data-tab="board"><span class="ico">📅</span>予定・連絡</button>
+  </nav>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<script type="module">
+// ============================================================
+//  設定（ここだけ書き換えることがあります）
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAXvYhtyy2Zf5vmAV9p9d2XJhoP01ewwTU",
+  authDomain: "kaimono-55f68.firebaseapp.com",
+  projectId: "kaimono-55f68",
+  storageBucket: "kaimono-55f68.firebasestorage.app",
+  messagingSenderId: "859082867690",
+  appId: "1:859082867690:web:1051f5e8ea6be281ec2893"
+};
+
+// 合言葉チェック番号（最初は空のままでOK。あとで案内に従って入れます）
+const PASS_CHECK = "";
+// ============================================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, onSnapshot, query, orderBy,
+  updateDoc, doc, writeBatch, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+
+const $ = (id) => document.getElementById(id);
+const CATS = ["食品", "日用品", "その他"];
+const CAT_COLOR = { "食品": "#7FB069", "日用品": "#6FA8DC", "その他": "#C38EC7" };
+
+let familyId = null;
+let items = [];
+let selectedCat = "食品";
+let unsubscribe = null;
+
+// ---------- 小さな道具 ----------
+async function sha256(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+async function makeCheckCode(fid) {
+  return (await sha256("check:" + fid)).slice(0, 8);
+}
+function showToast(msg, ms = 4000) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.remove("hidden");
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => t.classList.add("hidden"), ms);
+}
+function showError(e) {
+  console.error(e);
+  showToast("エラー：" + (e && (e.code || e.message) ? (e.code || "") + " " + (e.message || "") : e), 12000);
+}
+
+// ---------- 合言葉 ----------
+async function tryLogin() {
+  const pass = $("passInput").value.trim();
+  $("loginError").textContent = "";
+  if (pass.length < 4) {
+    $("loginError").textContent = "合言葉は4文字以上で入れてください";
+    return;
+  }
+  const fid = await sha256("kazoku-app:" + pass);
+  if (PASS_CHECK && (await makeCheckCode(fid)) !== PASS_CHECK) {
+    $("loginError").textContent = "合言葉がちがうようです";
+    return;
+  }
+  localStorage.setItem("kazoku_fid", fid);
+  startApp(fid);
+}
+$("loginBtn").addEventListener("click", tryLogin);
+$("passInput").addEventListener("keydown", (e) => { if (e.key === "Enter") tryLogin(); });
+
+$("logoutBtn").addEventListener("click", () => {
+  if (!confirm("合言葉を入れ直しますか？")) return;
+  localStorage.removeItem("kazoku_fid");
+  location.reload();
+});
+
+async function startApp(fid) {
+  familyId = fid;
+  $("login").classList.add("hidden");
+  $("app").classList.remove("hidden");
+
+  if (!PASS_CHECK) {
+    $("checkCode").textContent = await makeCheckCode(fid);
+    $("setupNote").classList.remove("hidden");
+  }
+
+  try {
+    await signInAnonymously(auth);
+  } catch (e) {
+    showError(e);
+    return;
+  }
+  listenItems();
+}
+
+// ---------- 買い物リスト ----------
+function itemsCol() {
+  return collection(db, "families", familyId, "items");
+}
+
+function listenItems() {
+  if (unsubscribe) unsubscribe();
+  const q = query(itemsCol(), orderBy("createdAt", "asc"));
+  unsubscribe = onSnapshot(q, (snap) => {
+    items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderItems();
+  }, showError);
+}
+
+function renderItems() {
+  const list = $("list");
+  list.innerHTML = "";
+
+  if (items.length === 0) {
+    list.innerHTML = '<div class="empty">まだ何もありません 🍀<br>上から追加してください</div>';
+  }
+
+  for (const cat of CATS) {
+    const inCat = items.filter(i => (i.category || "その他") === cat);
+    if (inCat.length === 0) continue;
+    inCat.sort((a, b) => Number(a.done) - Number(b.done));
+
+    const title = document.createElement("div");
+    title.className = "section-title";
+    title.innerHTML = `<span class="dot" style="background:${CAT_COLOR[cat]}"></span>`;
+    title.append(`${cat}（${inCat.filter(i => !i.done).length}）`);
+    list.appendChild(title);
+
+    for (const it of inCat) {
+      const row = document.createElement("div");
+      row.className = "item" + (it.done ? " done" : "");
+      const check = document.createElement("div");
+      check.className = "check";
+      check.textContent = it.done ? "✓" : "";
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = it.name;
+      row.append(check, name);
+      row.addEventListener("click", () => toggleItem(it));
+      list.appendChild(row);
+    }
+  }
+
+  const doneCount = items.filter(i => i.done).length;
+  const clearBtn = $("clearBtn");
+  clearBtn.classList.toggle("hidden", doneCount === 0);
+  clearBtn.textContent = `🧹 買ったもの（${doneCount}件）をまとめて消す`;
+}
+
+async function addItem() {
+  const input = $("itemName");
+  const name = input.value.trim();
+  if (!name) { input.focus(); return; }
+  input.value = "";
+  try {
+    await addDoc(itemsCol(), {
+      name: name.slice(0, 50),
+      category: selectedCat,
+      done: false,
+      createdAt: serverTimestamp()
+    });
+  } catch (e) { showError(e); }
+  input.focus();
+}
+$("addBtn").addEventListener("click", addItem);
+$("itemName").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.isComposing) addItem();
+});
+
+document.querySelectorAll(".cat-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    selectedCat = btn.dataset.cat;
+  });
+});
+
+async function toggleItem(it) {
+  try {
+    await updateDoc(doc(db, "families", familyId, "items", it.id), { done: !it.done });
+  } catch (e) { showError(e); }
+}
+
+$("clearBtn").addEventListener("click", async () => {
+  const doneItems = items.filter(i => i.done);
+  if (doneItems.length === 0) return;
+  if (!confirm(`買ったもの ${doneItems.length}件 を消しますか？`)) return;
+  try {
+    const batch = writeBatch(db);
+    doneItems.forEach(i => batch.delete(doc(db, "families", familyId, "items", i.id)));
+    await batch.commit();
+    showToast("消しました");
+  } catch (e) { showError(e); }
+});
+
+// ---------- タブ切り替え ----------
+document.querySelectorAll("nav button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.dataset.tab;
+    $("tab-shop").classList.toggle("hidden", tab !== "shop");
+    $("tab-board").classList.toggle("hidden", tab !== "board");
+    $("pageTitle").textContent = tab === "shop" ? "🛒 買い物リスト" : "📅 予定・連絡";
+  });
+});
+
+// ---------- 起動 ----------
+(async () => {
+  const saved = localStorage.getItem("kazoku_fid");
+  if (saved && (!PASS_CHECK || (await makeCheckCode(saved)) === PASS_CHECK)) {
+    startApp(saved);
+  } else {
+    localStorage.removeItem("kazoku_fid");
+    $("login").classList.remove("hidden");
+  }
+})();
+
+// ---------- ホーム画面に追加（PWA）用 ----------
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
